@@ -43,6 +43,8 @@ static struct mm_region rbx_mem_map[CONFIG_NR_DRAM_BANKS + 2] = { { 0 } };
 
 struct mm_region *mem_map = rbx_mem_map;
 
+static char of_match_name[32] __section(".data") = { 0 };
+
 static void show_psci_version(void)
 {
 	struct arm_smccc_res res;
@@ -54,6 +56,14 @@ static void show_psci_version(void)
 	      PSCI_VERSION_MINOR(res.a0));
 }
 
+int board_fit_config_name_match(const char *name)
+{
+	if (!of_match_name[0])
+		return -EINVAL;
+
+	return strcmp(of_match_name, name);
+}
+
 /* We support booting U-Boot with an internal DT when running as a first-stage bootloader
  * or for supporting quirky devices where it's easier to leave the downstream DT in place
  * to improve ABL compatibility. Otherwise, we use the DT provided by ABL.
@@ -62,6 +72,7 @@ int board_fdt_blob_setup(void **fdtp)
 {
 	struct fdt_header *fdt;
 	bool internal_valid, external_valid;
+	const char *fit_match;
 	int ret = 0;
 
 	fdt = (struct fdt_header *)get_prev_bl_fdt_addr();
@@ -90,6 +101,18 @@ int board_fdt_blob_setup(void **fdtp)
 	 * this makes it easy to do other things early.
 	 */
 	qcom_parse_memory(*fdtp, internal_valid);
+
+	fit_match = qcom_of_match(fdt);
+	/* If the external FDT contained match data then the initramfs should be
+		* a FIT image containing the DTBs to pick from. We must set the FDT
+		* to that so that U-Boot can operate on it.
+		* We can still retrive the external dummy FDT with get_prev_bl_fdt_addr().
+		*/
+	if (fit_match) {
+		strncpy(of_match_name, fit_match, sizeof(of_match_name));
+		*fdtp = (void*)fdtdec_get_initrd_start_addr(fdt);
+		log_debug("using FIT %p\n", fdt);
+	}
 
 	return ret;
 }
