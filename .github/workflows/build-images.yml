@@ -8,10 +8,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - device: sm7150-google-sunfish
-          - device: sm7150-xiaomi-davinci
-          - device: sm7150-xiaomi-surya-huaxing
-          - device: sm7150-xiaomi-surya-tianma
+          - device: sm7125-xiaomi-curtana-huaxing
+          - device: sm7125-xiaomi-curtana-tianma
+          - device: sm7125-xiaomi-joyeuse-huaxing
+          - device: sm7125-xiaomi-joyeuse-tianma
 
     name: Build ${{ matrix.device }}
     runs-on: ubuntu-latest
