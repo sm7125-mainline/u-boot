@@ -64,13 +64,21 @@ static int is_match_memory(struct qcom_match *data, ofnode node)
 static int is_match_bootargs(struct qcom_match *data, ofnode node)
 {
 	const char *bootargs;
+	int bootargs_count, i, ret;
 
-	bootargs = ofnode_read_string(node, "match,bootargs");
-	if (!bootargs)
+	bootargs_count = ofnode_read_string_count(node, "match,bootargs");
+	if (bootargs_count < 0)
 		return -ENODATA;
 
-	if (!strstr(data->bootargs, bootargs))
-		return false;
+	for (i = 0; i < bootargs_count; i++)
+	{
+		ret = ofnode_read_string_index(node, "match,bootargs", i, &bootargs);
+		if (ret < 0)
+			return -ENODATA;
+
+		if (!strstr(data->bootargs, bootargs))
+			return false;
+	}
 
 	return true;
 }
